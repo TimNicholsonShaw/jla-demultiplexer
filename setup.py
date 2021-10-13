@@ -6,12 +6,12 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
-    name='jla-tailer', 
-    version='0.1.3',
-    description='Tool to find 3\' tailing of non-coding RNAs',
+    name='jla-demultiplexer', 
+    version='0.0.1',
+    description='Internal lab use tool for 3 end analysis',
     long_description=long_description,
     long_description_content_type='text/markdown', 
-    url='https://github.com/TimNicholsonShaw/tailer',  
+    url='https://github.com/TimNicholsonShaw/jla-demultiplexer',  
     author='Tim Nicholson-Shaw',
     author_email='timnicholsonshaw@gmail.com',
     classifiers=[ 
@@ -23,11 +23,11 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.6',
-    install_requires=['pysam', 'Bio', 'gffutils', "tqdm", "requests"],
+    install_requires=["jla-tailer"],
 
     entry_points={
         'console_scripts': [
-            'Tailer=Tailer.Tailer:main',
+            'deMultiplexer=deMultiplexer:main',
         ],
     },
 
