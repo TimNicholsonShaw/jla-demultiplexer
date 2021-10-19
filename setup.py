@@ -23,16 +23,15 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.6',
-    install_requires=["jla-tailer"],
+    install_requires=[],#"jla-tailer"],
 
     entry_points={
         'console_scripts': [
-            'deMultiplexer=deMultiplexer:main',
+            'fastqbreakdown=deMultiplexer:fastqBreakDown',
         ],
     },
 
     project_urls={ 
         'Lab Website': 'https://labs.biology.ucsd.edu/lykkeandersen/index.html',
-
     },
 )

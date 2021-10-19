@@ -93,36 +93,48 @@ class Experiment():
             previouslySeenRanMers.append(ranmer)
             trimmed = pair.trim(len(barcode), read=2, end=5)
             trimmed = trimmed.trim(ranmerLen+2, read=1, end=3) # For the AG
+            trimmed = trimmed.trim(len(barcode), read=1, end=5) # In case reads to barcode, probably too much
             dupRemovedReadPairs.append(trimmed)
             dupDict[seq] = previouslySeenRanMers
         
         return Experiment(dupRemovedReadPairs)
-            
-def fastaBreakDown():
-    parser = argparse.ArgumentParser()
+    def toCSV(self, r1_out, r2_out):
+        with open(r1_out, 'w') as r1out, open(r2_out, 'w') as r2out:
+            for pair in self:
+                r1out.write(pair.r1.format('fastq'))
+                r2out.write(pair.r2.format('fastq'))
+        
+def fastqBreakDown():
+    parser = argparse.ArgumentParser(description="Specific to JLA gene specific sequencing. Removes PCR duplicates, trims barcodes, outputs fastq")
     
-    parser.add_argument()
+    parser.add_argument("-r1", "--read1", help="Location to read1, fastq format, no compression", required=True)
+    parser.add_argument("-r2", "--read2", help="Location to read2, fastq format, no compression", required=True)
+    parser.add_argument("-b", "--barcode", help="barcode plus gene specific portion, no common adapter", required=True)
+    parser.add_argument("-r", "--ranmerlen", type=int, help="Length of random-mer. 10 or 11", required=True)
 
+    args=parser.parse_args()
 
-
-
-
-
-
+    print("Reading in Files...")
+    experiment = Experiment(args.read1, args.read2)
+    print("Filtering/Trimming...")
+    experiment = experiment.filterAndRemovePCRDuplicatesandTrim(args.ranmerlen, args.barcode)
+    print("Writing to file...")
+    experiment.toCSV(args.read1+".processed.fastq", args.read2+".processed.fastq")
+    print("Done")
 
 
 
 
 if __name__ == "__main__":
-    
+    fastqBreakDown()
 
-    experiment = Experiment("tests/503701_S3_L001_R1_001.fastq", "tests/503701_S3_L001_R2_001.fastq")
-    barcode = "CACTCATCCTTTTCTTGGGGTTGC"
-    print(len(experiment))
-    print(len(list(experiment.filterBarcodedPairs(barcode))))
+    #experiment = Experiment("tests/503701_S3_L001_R1_001.fastq", "tests/503701_S3_L001_R2_001.fastq")
+    #barcode = "CACTCATCCTTTTCTTGGGGTTGC"
+    #print(len(experiment))
+    #print(len(list(experiment.filterBarcodedPairs(barcode))))
 
-    exp2 = experiment.filterAndRemovePCRDuplicatesandTrim(ranmerLen=10, barcode=barcode)
-    print(len(exp2))
+    #exp2 = experiment.filterAndRemovePCRDuplicatesandTrim(ranmerLen=10, barcode=barcode)
+    #print(len(exp2))
 
-    
+    #print(exp2.experimentReadPairs[0].r1.format('fastq'))
 
