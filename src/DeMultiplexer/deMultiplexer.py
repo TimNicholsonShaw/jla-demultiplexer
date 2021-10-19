@@ -45,7 +45,6 @@ class ReadPair():
         return self.r2.reverse_complement()
 class Experiment():
     """Singular experiment consisting of matched r1 and r2"""
-    @affirm(0.1)
     def __init__(self, *args, **kwargs):
         if type(args[0]) == str:
             self.experimentReadPairs = []
@@ -103,7 +102,8 @@ class Experiment():
             for pair in self:
                 r1out.write(pair.r1.format('fastq'))
                 r2out.write(pair.r2.format('fastq'))
-        
+
+@affirm(0.1)       
 def fastqBreakDown():
     parser = argparse.ArgumentParser(description="Specific to JLA gene specific sequencing. Removes PCR duplicates, trims barcodes, outputs fastq")
     
