@@ -1,19 +1,112 @@
-from Tailer import LocalAligner as la
-from Bio import SeqIO
+from Bio import SeqIO, SeqRecord
+from Affirmations import affirm
+from distance import hamming
+import argparse
 
-def parseFASTQ(read1, read2):
-    with open(read1, 'r') as r1, open(read2, 'r') as r2:
-        r1 = SeqIO.parse(r1, "fastq")
-        r2 = SeqIO.parse(r2, "fastq")
-        x = zip(list(r1), list(r2))
-        return x
+class ReadPair():
+    """Object to hold readPairs and associated methods"""
+
+    def __init__(self, r1:SeqRecord.SeqRecord, r2:SeqRecord.SeqRecord):
+        self.r1 = r1
+        self.r2 = r2
+
+    def getBarcode(self, barLen, revComp=False, read=2):
+        """Looks for barcodes at 5' ends of reads. Defaults to reverse complement of read 2"""
+        if read==1:
+            if revComp:
+                return self.r1RevComp()[:barLen].seq
+            else:
+                return self.r1[:barLen].seq
+
+        elif read==2:
+            if revComp:
+                return self.r2RevComp()[:barLen].seq
+            else:
+                return self.r2[:barLen].seq
+
+    def trim(self, length, read, end):
+        if read == 1: # read 1 is reversed in illumina sequencing
+            if end == 3: # So we trim from the front for 3'
+                return ReadPair(self.r1[length:], self.r2)
+            elif end == 5: # And from the back half here
+                return ReadPair(self.r1[:-length], self.r2)
+        elif read == 2: # read 2 is in correct orientation
+            if end == 3: # So we trim from the front for 3'
+                return ReadPair(self.r1, self.r2[:-length])
+            elif end == 5: # And from the back half here
+                return ReadPair(self.r1, self.r2[length:])
+    def getRanMer(self, ranMerLen):
+        return self.r1RevComp()[-ranMerLen:].seq
+    def getAnalysisSeq(self, ranMerLen, additionalLigation):
+        return self.r1RevComp()[-(ranMerLen+additionalLigation):].seq
+    def r1RevComp(self):
+        return self.r1.reverse_complement()
+    def r2RevComp(self):
+        return self.r2.reverse_complement()
+class Experiment():
+    """Singular experiment consisting of matched r1 and r2"""
+    @affirm(0.1)
+    def __init__(self, *args, **kwargs):
+        if type(args[0]) == str:
+            self.experimentReadPairs = []
+            with open(args[0], 'r') as r1, open(args[1], "r") as r2:
+                r1 = list(SeqIO.parse(r1, "fastq"))
+                r2 = list(SeqIO.parse(r2, "fastq"))
+                self.dupRemovedFlag = False
+
+                assert len(r1) == len(r2) # everything should have a pair
+
+                for i in range(len(r1)):
+                    self.experimentReadPairs.append(ReadPair(r1[i], r2[i]))
+        else: # Allows for creation with just the experiment readpairs
+            self.experimentReadPairs = args[0]
+
+    def __iter__(self):
+        for read in self.experimentReadPairs:
+            yield read
+
+    def __len__(self):
+        return(len(self.experimentReadPairs))
+
+    def filterBarcodedPairs(self, barcode, revComp=False, read=2):
+        for pair in self.experimentReadPairs:
+            if pair.getBarcode(len(barcode), revComp=revComp, read=read) == barcode:
+                yield pair
+
+    def filterAndRemovePCRDuplicatesandTrim(self, ranmerLen, barcode, maxHam=1):
+        """Very specific to our sequencing methodology.
+        Tims adapter"""
+        dupDict ={}
+        dupRemovedReadPairs = []
+        for pair in self.filterBarcodedPairs(barcode):
+            seq = pair.getAnalysisSeq(ranmerLen, 2)
+            ranmer = pair.getRanMer(ranmerLen)
+
+            previouslySeenRanMers = dupDict.get(seq, [])
+
+            if not previouslySeenRanMers:
+                pass
+            elif min([hamming(ranmer, x) for x in previouslySeenRanMers]) <= maxHam: 
+                continue
+
+
+            previouslySeenRanMers.append(ranmer)
+            trimmed = pair.trim(len(barcode), read=2, end=5)
+            trimmed = trimmed.trim(ranmerLen+2, read=1, end=3) # For the AG
+            dupRemovedReadPairs.append(trimmed)
+            dupDict[seq] = previouslySeenRanMers
+        
+        return Experiment(dupRemovedReadPairs)
+            
+def fastaBreakDown():
+    parser = argparse.ArgumentParser()
     
+    parser.add_argument()
 
-def getBarcode(entry, ranmerlen=0, trimlen=0):
-    pass
 
-def trimEntry(Entry, length=0, loc="5"):
-    pass
+
+
+
 
 
 
@@ -21,10 +114,15 @@ def trimEntry(Entry, length=0, loc="5"):
 
 
 if __name__ == "__main__":
-    x = parseFASTQ("tests/503701_S3_L001_R1_001.fastq", "tests/503701_S3_L001_R2_001.fastq")
+    
 
-    targ = "TGTGCCATCCTTTTCTTGGGGTTGC"
+    experiment = Experiment("tests/503701_S3_L001_R1_001.fastq", "tests/503701_S3_L001_R2_001.fastq")
+    barcode = "CACTCATCCTTTTCTTGGGGTTGC"
+    print(len(experiment))
+    print(len(list(experiment.filterBarcodedPairs(barcode))))
 
-    for pair in x:
-        if str(pair[1].seq.reverse_complement())[:len(targ)] == targ:
-            print("woo")
+    exp2 = experiment.filterAndRemovePCRDuplicatesandTrim(ranmerLen=10, barcode=barcode)
+    print(len(exp2))
+
+    
+
