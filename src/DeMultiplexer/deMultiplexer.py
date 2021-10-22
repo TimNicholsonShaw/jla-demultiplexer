@@ -1,8 +1,9 @@
 from Bio import SeqIO, SeqRecord
 from Affirmations import affirm
 from distance import hamming
-import argparse
+import argparse, tempfile, os, subprocess
 import pandas as pd
+from Tailer import LocalAligner as la
 
 class ReadPair():
     """Object to hold readPairs and associated methods"""
@@ -103,6 +104,10 @@ class Experiment():
             for pair in self:
                 r1out.write(pair.r1.format('fastq'))
                 r2out.write(pair.r2.format('fastq'))
+    def writeRead1(self, outfile):
+        with open(outfile, 'w') as file:
+            for pair in self:
+                file.write(pair.r1.format('fastq'))
 class ManifestEntry():
     def __init__(self, csvline):
         "Uses a csv/xls as an input to log the different experimental conditions"
@@ -151,12 +156,65 @@ def fastqBreakDown():
     experiment.toCSV(args.read1+".processed.fastq", args.read2+".processed.fastq")
     print("Done")
 
+@affirm(0.3)
+def manifestAlign():
+    parser = argparse.ArgumentParser(description="")
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    parser.add_argument("-r1", "--read1", help="Location to read1, fastq format, no compression", required=True)
+    parser.add_argument("-r2", "--read2", help="Location to read1, fastq format, no compression", required=True)
+    parser.add_argument("-m", "--manifest", help="Location of manifest file", required=True)
+    parser.add_argument("-t", "--trimmed", action="store_true", help="Set if you've already trimmed the randommer off")
+
+    group.add_argument("-e", "--ensids", help="Ensembl IDs for database generation comma separated, this or -f is required")
+    group.add_argument("-f", "--fasta", help="FASTA to use as reference database. This or -e is required")
+
+
+    args = parser.parse_args()
+
+    tempDir = tempfile.TemporaryDirectory() # temporary file holder
+    queryFile = tempDir.name + "/query.fasta"
+    dbFile = tempDir.name + "/db.fa"
+    preQueryFile = tempDir.name + "/preQuery.fasta"
+    XML_file = tempDir.name + "/temp.xml"
+
+    readPairs = Experiment(args.read1, args.read2) # read fastq files into handler
+    manifest = Manifest(args.manifest) # get handled manifest
+
+    args.ensids = args.ensids.split(",")
+
+
+    pre, ext = os.path.splitext(args.read1) # for giving good file names
+
+    print("Making Database")
+    if args.ensids:
+        la.buildDBFromEID(args.ensids, dbFile)
+    else:
+        subprocess.call(["makeblastdb", "-in", args.fasta, "-dbtype", "nucl"])
+        dbFile = args.fasta
+
+    for entry in manifest:
+        tempReadPairs = readPairs.filterAndRemovePCRDuplicatesandTrim(entry.ranmer, entry.barcode)
+        if len(tempReadPairs) == 0:
+            print("Nothing found for ", entry.ID)
+            continue
+        tempReadPairs.writeRead1(preQueryFile)
+
+        print("Parsing...", entry.ID)
+        tempReadPairs = la.parseFASTQ(preQueryFile)
+        la.queryFormatter(tempReadPairs, queryFile, rev_comp=True)
+        la.alignBlastDB(queryFile, dbFile, XML_file)
+        tempReadPairs = la.BlastResultsParser(XML_file, tempReadPairs)
+
+        la.tailbuildr(tempReadPairs, pre+entry.ID+"_tails.csv")
+
+
+
+
 
 
 
 if __name__ == "__main__":
-    manifest = Manifest("tests/503701.csv")
-    for item in manifest:
-        print(item.ID)
+    manifestAlign()
 
 
