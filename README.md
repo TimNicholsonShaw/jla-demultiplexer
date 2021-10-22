@@ -10,7 +10,8 @@ pip install jla-demultiplexer
 
 fastqbreakdown: Removes duplicate reads and trims barcodes and randommer addition
 ```bash
-fastqbreakdown -r1 [read 1 location] -r2 [read 2 location] -r [length of random-mer] -b [barcode]
+fastqbreakdown -r1 [read 1 location] -r2 [read 2 location] \
+  -r [length of random-mer] -b [barcode]
 ```
 
 ## Notes
@@ -19,7 +20,8 @@ fastqbreakdown -r1 [read 1 location] -r2 [read 2 location] -r [length of random-
 
 demultiplexer: Use JLA standard manifests to align and create tail files. Very specific to our gene-specific sequencing methodology
 ```bash
-demultiplexer -r1 [read 1 location] -r2 [read 2 location] -m [manifest location] -e [ensids] -f [reference fasta]
+demultiplexer -r1 [read 1 location] -r2 [read 2 location] \
+  -m [manifest location] -e [ensids] -f [reference fasta]
 ```
 ## Notes
 - Must provide either -e (comma separated) or -f, but not both
