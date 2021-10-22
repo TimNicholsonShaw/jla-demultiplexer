@@ -2,6 +2,7 @@ from Bio import SeqIO, SeqRecord
 from Affirmations import affirm
 from distance import hamming
 import argparse
+import pandas as pd
 
 class ReadPair():
     """Object to hold readPairs and associated methods"""
@@ -102,6 +103,34 @@ class Experiment():
             for pair in self:
                 r1out.write(pair.r1.format('fastq'))
                 r2out.write(pair.r2.format('fastq'))
+class ManifestEntry():
+    def __init__(self, csvline):
+        "Uses a csv/xls as an input to log the different experimental conditions"
+        self.ID = csvline[0].strip()
+        self.barcode= csvline[2].strip() + csvline[3].strip() # combines barcode with gene-specific portion 
+        self.ranmer = int(csvline[4])
+class Manifest():
+    def __init__(self, file):
+        self.entries =[]
+        with open(file, 'r') as infile:
+            try:
+                if file.endswith(".csv"):
+                    next(infile) # skips header
+                    infile = [x.split(",") for x in infile]
+                else:  # excel file handler
+                    infile = pd.ExcelFile(file)
+                    infile = infile.parse()
+                    infile = [row.values for _ , row in infile.iterrows()]
+            except:
+                raise("file type not supported")
+            
+            for line in infile: # works with either csv or excel after above
+                if not line[0]: continue # handles emptyp lines
+                self.entries.append(ManifestEntry(line)) # creates a new manifest object
+    def __iter__(self):
+        for entry in self.entries:
+            yield entry
+
 
 @affirm(0.1)       
 def fastqBreakDown():
@@ -126,15 +155,8 @@ def fastqBreakDown():
 
 
 if __name__ == "__main__":
-    fastqBreakDown()
+    manifest = Manifest("tests/503701.csv")
+    for item in manifest:
+        print(item.ID)
 
-    #experiment = Experiment("tests/503701_S3_L001_R1_001.fastq", "tests/503701_S3_L001_R2_001.fastq")
-    #barcode = "CACTCATCCTTTTCTTGGGGTTGC"
-    #print(len(experiment))
-    #print(len(list(experiment.filterBarcodedPairs(barcode))))
-
-    #exp2 = experiment.filterAndRemovePCRDuplicatesandTrim(ranmerLen=10, barcode=barcode)
-    #print(len(exp2))
-
-    #print(exp2.experimentReadPairs[0].r1.format('fastq'))
 
