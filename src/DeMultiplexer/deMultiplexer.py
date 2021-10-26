@@ -108,6 +108,31 @@ class Experiment():
         with open(outfile, 'w') as file:
             for pair in self:
                 file.write(pair.r1.format('fastq'))
+
+    def trimAndDeDuplicate(self, ranmerLen, maxHam=1):
+        """Very specific to our sequencing methodology.
+        Tims adapter"""
+        dupDict ={}
+        dupRemovedReadPairs = []
+        for pair in self:
+            seq = pair.getAnalysisSeq(ranmerLen, 2)
+            ranmer = pair.getRanMer(ranmerLen)
+
+            previouslySeenRanMers = dupDict.get(seq, [])
+
+            if not previouslySeenRanMers:
+                pass
+            elif min([hamming(ranmer, x) for x in previouslySeenRanMers]) <= maxHam: 
+                continue
+
+
+            previouslySeenRanMers.append(ranmer)
+            trimmed = pair.trim(ranmerLen+2, read=1, end=3) # For the AG
+            dupRemovedReadPairs.append(trimmed)
+            dupDict[seq] = previouslySeenRanMers
+        
+        return Experiment(dupRemovedReadPairs)
+
 class ManifestEntry():
     def __init__(self, csvline):
         "Uses a csv/xls as an input to log the different experimental conditions"
@@ -208,13 +233,26 @@ def manifestAlign():
 
         la.tailbuildr(tempReadPairs, pre+entry.ID+"_tails.csv")
 
+@affirm(0.5)
+def trimDeDup():
+    parser = argparse.ArgumentParser(description="Specific to JLA gene specific sequencing. Removes PCR duplicates, trims randomers, outputs fastq")
+    
+    parser.add_argument("-r1", "--read1", help="Location to read1, fastq format, no compression", required=True)
+    parser.add_argument("-r2", "--read2", help="Location to read2, fastq format, no compression", required=True)
+    parser.add_argument("-r", "--ranmerlen", type=int, help="Length of random-mer. 10 or 11", required=True)
 
+    args=parser.parse_args()
 
-
+    print("Reading in Files...")
+    experiment = Experiment(args.read1, args.read2)
+    print("Filtering/Trimming...")
+    experiment = experiment.trimAndDeDuplicate(args.ranmerlen)
+    experiment.toCSV(args.read1+".trimmed.fastq", args.read2+".trimmed.fastq")
+    print("Done")
 
 
 
 if __name__ == "__main__":
-    manifestAlign()
+    trimDeDup()
 
 

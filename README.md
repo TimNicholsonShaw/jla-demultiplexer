@@ -32,5 +32,17 @@ demultiplexer -r1 [read 1 location] -r2 [read 2 location] \
 - outputs to location of read 1
 - tail file output is compatible with Tailer-Analysis which can be found at https://timnicholsonshaw.shinyapps.io/tailer-analysis/
 
+## Usage
+
+jla-trim: Removes duplicate reads and trims randommer addition only. FASTQ output
+```bash
+jla-trim -r1 [read 1 location] -r2 [read 2 location] \
+  -r [length of random-mer]
+```
+
+## Notes
+
+- Random-mer length supplied should be 10 or 11
+
 
 

@@ -1,1 +1,1 @@
-from .deMultiplexer import fastqBreakDown, manifestAlign
+from .deMultiplexer import fastqBreakDown, manifestAlign, trimDeDup
