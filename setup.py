@@ -7,7 +7,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='jla-demultiplexer', 
-    version='0.0.5',
+    version='0.0.6',
     description='Internal lab use tool for 3 end analysis',
     long_description=long_description,
     long_description_content_type='text/markdown', 
@@ -23,7 +23,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.6',
-    install_requires=["jla-tailer>=0.1.5", "Affirmations>=0.0.10"],
+    install_requires=["jla-tailer>=0.1.5", "Affirmations>=0.0.10","pandas", "distance", "Bio"],
 
     entry_points={
         'console_scripts': [
