@@ -206,7 +206,7 @@ def manifestAlign():
     readPairs = Experiment(args.read1, args.read2) # read fastq files into handler
     manifest = Manifest(args.manifest) # get handled manifest
 
-    args.ensids = args.ensids.split(",")
+    if args.ensids: args.ensids = args.ensids.split(",")
 
 
     pre, ext = os.path.splitext(args.read1) # for giving good file names
