@@ -244,7 +244,7 @@ def trimDeDup():
     r1_fastq = SeqIO.parse(args.read1, "fastq")
     r2_fastq = SeqIO.parse(args.read2, "fastq")
 
-    with open(args.read1+".trimmed.fastq") as r1_out, open(args.read2+".trimmed.fastq") as r2_out:
+    with open(args.read1+".trimmed.fastq", 'w') as r1_out, open(args.read2+".trimmed.fastq", 'w') as r2_out:
         dupDict={}
         for r1, r2 in zip(r1_fastq, r2_fastq):
             pair = ReadPair(r1, r2)
@@ -261,6 +261,9 @@ def trimDeDup():
             previouslySeenRanMers.append(ranmer)
             trimmed = pair.trim(args.ranmerlen+2, read=1, end=3) # For the AG
             dupDict[seq] = previouslySeenRanMers
+
+            r1_out.write(trimmed.r1.format('fastq'))
+            r2_out.write(trimmed.r2.format('fastq'))
 
             
             
