@@ -240,12 +240,14 @@ def trimDeDup():
 
     args=parser.parse_args()
 
-    print("Reading in Files...")
-    experiment = Experiment(args.read1, args.read2)
-    print("Filtering/Trimming...")
-    experiment = experiment.trimAndDeDuplicate(args.ranmerlen)
-    experiment.toCSV(args.read1+".trimmed.fastq", args.read2+".trimmed.fastq")
-    print("Done")
+    r1_fastq = SeqIO.parse(args.r1, "fastq")
+    r2_fastq = SeqIO.parse(args.r2, "fastq")
+
+    with open(args.read1+".trimmed.fastq") as r1_out, open(args.read2+".trimmed.fastq") as r2_out:
+        for r1, r2 in zip(r1_fastq, r2_fastq):
+            pass
+    
+    print('woo')
 
 
 
