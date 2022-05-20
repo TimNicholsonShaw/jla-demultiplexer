@@ -237,6 +237,7 @@ def trimDeDup():
     parser.add_argument("-r1", "--read1", help="Location to read1, fastq format, no compression", required=True)
     parser.add_argument("-r2", "--read2", help="Location to read2, fastq format, no compression", required=True)
     parser.add_argument("-r", "--ranmerlen", type=int, help="Length of random-mer. 10 or 11", required=True)
+    parser.add_argument("-maxHam", "--maxHam", type=int, default=1, help="Minimum differences in ranmer seq")
 
     args=parser.parse_args()
 
@@ -244,7 +245,28 @@ def trimDeDup():
     r2_fastq = SeqIO.parse(args.read2, "fastq")
 
     with open(args.read1+".trimmed.fastq") as r1_out, open(args.read2+".trimmed.fastq") as r2_out:
+        dupDict={}
         for r1, r2 in zip(r1_fastq, r2_fastq):
+            pair = ReadPair(r1, r2)
+            seq = pair.getAnalysisSeq(args.ranmerlen, 2)
+            ranmer = pair.getRanMer(args.ranmerlen)
+
+            previouslySeenRanMers = dupDict.get(seq, [])
+
+            if not previouslySeenRanMers:
+                pass
+            elif min([hamming(ranmer, x) for x in previouslySeenRanMers]) <= args.maxHam: 
+                continue
+
+            previouslySeenRanMers.append(ranmer)
+            trimmed = pair.trim(args.ranmerlen+2, read=1, end=3) # For the AG
+            dupDict[seq] = previouslySeenRanMers
+
+            
+            
+            
+
+
     
     print('woo')
 
