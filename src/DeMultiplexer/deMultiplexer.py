@@ -240,12 +240,11 @@ def trimDeDup():
 
     args=parser.parse_args()
 
-    r1_fastq = SeqIO.parse(args.r1, "fastq")
-    r2_fastq = SeqIO.parse(args.r2, "fastq")
+    r1_fastq = SeqIO.parse(args.read1, "fastq")
+    r2_fastq = SeqIO.parse(args.read2, "fastq")
 
     with open(args.read1+".trimmed.fastq") as r1_out, open(args.read2+".trimmed.fastq") as r2_out:
         for r1, r2 in zip(r1_fastq, r2_fastq):
-            pass
     
     print('woo')
 
