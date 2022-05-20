@@ -161,8 +161,7 @@ class Manifest():
         for entry in self.entries:
             yield entry
 
-
-@affirm(0.1)       
+    
 def fastqBreakDown():
     parser = argparse.ArgumentParser(description="Specific to JLA gene specific sequencing. Removes PCR duplicates, trims barcodes, outputs fastq")
     
@@ -181,7 +180,6 @@ def fastqBreakDown():
     experiment.toCSV(args.read1+".processed.fastq", args.read2+".processed.fastq")
     print("Done")
 
-@affirm(0.3)
 def manifestAlign():
     parser = argparse.ArgumentParser(description="")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -233,7 +231,6 @@ def manifestAlign():
 
         la.tailbuildr(tempReadPairs, pre+entry.ID+"_tails.csv")
 
-@affirm(0.5)
 def trimDeDup():
     parser = argparse.ArgumentParser(description="Specific to JLA gene specific sequencing. Removes PCR duplicates, trims randomers, outputs fastq")
     
